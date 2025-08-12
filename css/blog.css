@@ -1,0 +1,65 @@
+/* ==========================================================================
+   Additional Blog Styling
+   ========================================================================== */
+
+/* 1. Make blog subtitle bolder on all pages */
+
+.post-excerpt {
+    font-weight: 600; /* Semi-bold for subtitles in blog listing */
+    margin-bottom: 1rem; /* More space after the excerpt */
+}
+
+.blog-content .post-meta:first-of-type {
+    font-weight: 600; /* Semi-bold for subtitle on blog post page */
+    font-size: 1.1rem; /* Slightly larger than regular text */
+    color: #444; /* Slightly darker than regular meta text */
+    margin-bottom: 1.5rem; /* More space after subtitle */
+}
+
+/* 2. Better spacing between blog title, subtitle and content */
+.blog-content h1 {
+    margin-bottom: 0.75rem; /* Space between title and subtitle */
+    font-size: 2rem; /* Make title slightly larger */
+}
+
+.blog-content .post-meta:nth-of-type(2) {
+    margin-bottom: 2.5rem; /* More space between metadata and actual content */
+    padding-bottom: 1.5rem; /* Add padding at the bottom */
+    border-bottom: 1px solid #f0f0f0; /* Light separator line */
+}
+
+/* 3. Better spacing for blog posts in blog.html */
+.blog-post {
+    margin-bottom: 3rem; /* Increased space between posts */
+    padding-bottom: 3rem; /* Increased padding at bottom */
+    border-bottom: 1px solid #f0f0f0; /* Consistent with other separators */
+}
+
+.post-title {
+    font-size: 1.75rem; /* Slightly larger title */
+    margin-bottom: 0.75rem; /* More space after title */
+}
+
+/* Improve spacing within blog content */
+.blog-content p {
+    margin-bottom: 1.75rem; /* More space between paragraphs */
+    line-height: 1.7; /* Slightly more line height for readability */
+}
+
+.blog-content h2 {
+    margin-top: 2.5rem; /* More space above subheadings */
+    margin-bottom: 1.25rem; /* More space below subheadings */
+    font-size: 1.5rem; /* Slightly larger subheadings */
+}
+
+/* Link styling in blog post */
+.blog-content a {
+    color: #9c27b0; /* Match your existing link style */
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.blog-content a:hover {
+    color: #7b1fa2; /* Match your existing hover style */
+    text-decoration: underline;
+}
