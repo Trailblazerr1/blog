@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Taalas "prints" LLM onto a chip?</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/profile.css">
+
+    <!-- Custom font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="icon" type="image/x-icon" href="../staticFiles/a-favicon.svg">
+    <style>
+        /* Additional blog styling */
+        .blog-content .post-meta:first-of-type {
+            font-weight: 600; /* Semi-bold for subtitle on blog post page */
+            font-size: 1.1rem; /* Slightly larger than regular text */
+            color: #444; /* Slightly darker than regular meta text */
+            margin-bottom: 1.5rem; /* More space after subtitle */
+        }
+        
+        .blog-content h1 {
+            margin-bottom: 0.75rem; /* Space between title and subtitle */
+            font-size: 2rem; /* Make title slightly larger */
+        }
+        
+        .blog-content .post-meta:nth-of-type(2) {
+            margin-bottom: 2.5rem; /* More space between metadata and actual content */
+            padding-bottom: 1.5rem; /* Add padding at the bottom */
+            border-bottom: 1px solid #f0f0f0; /* Light separator line */
+        }
+        
+        /* Improve spacing within blog content */
+        .blog-content p {
+            margin-bottom: 1.75rem; /* More space between paragraphs */
+            line-height: 1.7; /* Slightly more line height for readability */
+        }
+        
+        .blog-content h2 {
+            margin-top: 2.5rem; /* More space above subheadings */
+            margin-bottom: 1.25rem; /* More space below subheadings */
+            font-size: 1.5rem; /* Slightly larger subheadings */
+        }
+
+        /* Code blocks */
+        .blog-content pre {
+            background-color: #f5f5f5;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        .blog-content pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .blog-content code {
+            background-color: #f5f5f5;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        /* Lists */
+        .blog-content ul, .blog-content ol {
+            margin: 1rem 0 1.75rem 1.5rem;
+        }
+
+        .blog-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Images */
+        .blog-content img {
+            max-width: 100%;
+            height: auto;
+            margin: 1.5rem 0;
+            border-radius: 5px;
+        }
+
+        /* Blockquotes */
+        .blog-content blockquote {
+            border-left: 4px solid #9c27b0;
+            padding-left: 1rem;
+            margin-left: 0;
+            margin-right: 0;
+            margin-bottom: 1.75rem;
+            font-style: italic;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <header class="header-container">
+        <div class="header-left">
+            <a href="https://anuragk.com/blog"><h1>Blog</h1></a>
+        </div>
+        <div class="header-right">
+            <a href="https://anuragk.com/linkblog" class="home-link">Linkblog &nbsp;</a>
+            <a href="https://anuragk.com" class="home-link">Home</a>
+        </div>
+    </header>
+
+
+    <article class="blog-content">
+        <h1>How Taalas "prints" LLM onto a chip?</h1>
+        <p class="post-meta">or how to generate 17000 tokens per second?</p>
+        <p class="post-meta">February 22, 2026 · 4 min read</p>
+
+        <p><b>A startup called Taalas, recently released an ASIC chip running Llama 3.1 8B (3/6 bit quant) at an inference rate of 17,000 tokens per seconds. That's like writing around 30 A4 sized pages in one second. </b> They claim it's 10x cheaper in ownership cost than GPU based inference systems and is 10x less electricity hog. And yeah, about 10x faster than state of art inference.</p>
+<p>I tried to read through their blog and they've literally &quot;hardwired&quot; the model's weights on chip. Initially, this didn't sound intuitive to me.
+Coming from a Software background, with hobby-ist understanding of LLMs, I couldn't wrap my head around how you just &quot;print&quot; a LLM onto a chip. So, I decided to dig into multiple blogposts, LocalLLaMA discussions, and hardware concepts. It was much more interesting than I had thought. Hence this blogpost.</p>
+<h2>Basics</h2>
+<p>Taalas is a 2.5 year old company and it's their first chip. Taalas's chip is a fixed-function ASIC (Application-Specific Integrated Circuit). Kinda like a CD-ROM/Game cartridge, or a printed book, it only holds one model and cannot be rewritten.</p>
+<h2>HOW NVIDIA GPUs process stuff? (Inefficiency 101)</h2>
+<p>LLMs consist of sequential Layers. For eg. Llama 3.1 8B has 32 layers. The task of each layer is to further refine the input. Each layer is essentially large weight matrices (the model's 'knowledge').</p>
+<p>When a user inputs a prompt, it is converted into an vector of numbers aka embeddings. <br>
+On a normal GPU, the input vector enters the compute cores. Then GPU fetches the Layer 1 weights from VRAM/HBM (GPU's RAM) , does matrix multiplication, stores the intermediate results(aka activations) back in VRAM. Then it fetches the Layer 2 weights, and previous result, does the math, and saves it to VRAM again.
+This cycle continues till 32nd layer just to generate a single token. Then, to generate the next token, the GPU repeats this entire 32-layer journey.</p>
+        <img src="../staticFiles/Taalas/GPUInference.png" alt="GPU Inference">
+<p>So, due to this constant back-and-forth the memory bus induces latency and consumes significant amounts of energy. This is the memory bandwidth bottleneck, sometimes loosely called the Von Neumann bottleneck or the &quot;memory wall.&quot;</p>
+<h2>Breaking the wall!</h2>
+<p>Taalas sidesteps this wall entirely. They just engraved the 32 layers of Llama 3.1 sequentially on a chip. Essentially, the model's weights are physical transistors etched into the silicon.</p>
+        <img src="../staticFiles/Taalas/TaalasWay.png" alt="The Taalas Way">
+<p>Importantly, they also claim to have invented a hardware scheme where they can store a 4-bit data and perform the multiplication related to it using a single transistor. I will refer it as their 'magic multiplier'</p>
+<p>Now, when the user's input arrives, it gets converted into a vector, and flows into physical transistors making up Layer1. It does multiplication via their 'magic multiplier' and instead of result being saved in a VRAM, the electrical signal simply flows down physical wires into the Layer 2 transistors (via pipeline registers from what I understand). The data streams continuously through the silicon until the final output token is generated.</p>
+<h2>So, they don't use any RAM?</h2>
+<p>They don't use external DRAM/HBM, but they do use a small amount of on-chip SRAM.
+Why SRAM? Due to cost and complexity, manufacturers don't mix DRAM and logic gates. That's why GPUs have separate VRAM. (Also SRAM isn't facing supply chain crisis, DRAM is). <br>
+Taalas uses this on-chip SRAM for the KV Cache (the temporary memory/context window of an ongoing conversation) and to hold LoRA adapters for fine tuning.</p>
+<h2>But isn't fabricating a custom chip for every model super expensive?</h2>
+<p>Technically yes, I read lots of comments saying that.
+But Taalas designed a base chip with a massive, generic grid of logic gates and transistors. To map a specific model onto the chip, they only need to customize the top two layers/masks. While it's still slow, but it's much faster than building chips from ground up. <br>
+It took them two months, to develop chip for Llama 3.1 8B. In the AI world where one week is a year, it's super slow. But in a world of custom chips, this is supposed to be insanely fast.</p>
+<br>
+<p>As someone stuck running local models on a laptop without a massive GPU, I am keeping my fingers crossed for this type of hardware to be mass-produced soon.</p>
+
+    </article>
+
+    <div class="back-link">
+        <a href="../index.html">← Back to all posts</a>
+    </div>
+
+    <footer class="site-footer">
+        <p>Made with minimal HTML and CSS.</p>
+    </footer>
+</body>
+</html>
