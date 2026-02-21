@@ -115,7 +115,7 @@
         <p class="post-meta">or how to generate 17000 tokens per second?</p>
         <p class="post-meta">February 22, 2026 · 4 min read</p>
 
-        <p><b>A startup called Taalas, recently released an ASIC chip running Llama 3.1 8B (3/6 bit quant) at an inference rate of 17,000 tokens per seconds. That's like writing around 30 A4 sized pages in one second. </b> They claim it's 10x cheaper in ownership cost than GPU based inference systems and is 10x less electricity hog. And yeah, about 10x faster than state of art inference.</p>
+        <p><b>A startup called <a href="https://taalas.com/">Taalas</a>, recently released an ASIC chip running Llama 3.1 8B (3/6 bit quant) at an inference rate of 17,000 tokens per seconds. That's like writing around 30 A4 sized pages in one second. </b> They <a href="https://taalas.com/the-path-to-ubiquitous-ai/">claim</a> it's 10x cheaper in ownership cost than GPU based inference systems and is 10x less electricity hog. And yeah, about 10x faster than state of art inference.</p>
 <p>I tried to read through their blog and they've literally &quot;hardwired&quot; the model's weights on chip. Initially, this didn't sound intuitive to me.
 Coming from a Software background, with hobby-ist understanding of LLMs, I couldn't wrap my head around how you just &quot;print&quot; a LLM onto a chip. So, I decided to dig into multiple blogposts, LocalLLaMA discussions, and hardware concepts. It was much more interesting than I had thought. Hence this blogpost.</p>
 <h2>Basics</h2>
@@ -130,7 +130,7 @@ This cycle continues till 32nd layer just to generate a single token. Then, to g
 <h2>Breaking the wall!</h2>
 <p>Taalas sidesteps this wall entirely. They just engraved the 32 layers of Llama 3.1 sequentially on a chip. Essentially, the model's weights are physical transistors etched into the silicon.</p>
         <img src="../staticFiles/Taalas/TaalasWay.png" alt="The Taalas Way">
-<p>Importantly, they also claim to have invented a hardware scheme where they can store a 4-bit data and perform the multiplication related to it using a single transistor. I will refer it as their 'magic multiplier'</p>
+<p>Importantly, they also <a href="https://www.eetimes.com/taalas-specializes-to-extremes-for-extraordinary-token-speed/">claim</a> to have invented a hardware scheme where they can store a 4-bit data and perform the multiplication related to it using a single transistor. I will refer it as their 'magic multiplier'</p>
 <p>Now, when the user's input arrives, it gets converted into a vector, and flows into physical transistors making up Layer1. It does multiplication via their 'magic multiplier' and instead of result being saved in a VRAM, the electrical signal simply flows down physical wires into the Layer 2 transistors (via pipeline registers from what I understand). The data streams continuously through the silicon until the final output token is generated.</p>
 <h2>So, they don't use any RAM?</h2>
 <p>They don't use external DRAM/HBM, but they do use a small amount of on-chip SRAM.
